@@ -101,7 +101,4 @@ def get_status():
     """Aktif sayaçların durumunu gösterir."""
     return jsonify({"status": "ok", "active_counters": alarm_counters}), 200
 
-if __name__ == '__main__':
-    # Geliştirme ortamında çalıştırmak için
-    # app.run(host='0.0.0.0', port=5000)
-    pass
+
