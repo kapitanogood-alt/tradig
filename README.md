@@ -1,0 +1,2 @@
+# tradig
+sinyal tekrarı
