@@ -1,0 +1,152 @@
+{
+  "name": "BIST Fiili Dolaşım Sinyal Otomasyonu",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "value": 0
+            },
+            {
+              "field": "hours",
+              "value": 10
+            }
+          ]
+        }
+      },
+      "name": "Günlük Tetikleyici (10:00)",
+      "type": "n8n-nodes-base.schedule",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://kap.org.tr/tr/tumKalemler/kpy41_acc5_fiili_dolasimdaki_pay",
+        "options": {
+          "responseFormat": "file",
+          "fileName": "Şirketler.xls",
+          "fullResponse": false
+        }
+      },
+      "name": "KAP Verisini İndir",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "execute",
+        "script": "python3 process_data.py",
+        "options": {
+          "fullResponse": false
+        }
+      },
+      "name": "Veriyi Analiz Et (Python)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "readFile",
+        "path": "signal_output.txt"
+      },
+      "name": "Sinyal Dosyasını Oku",
+      "type": "n8n-nodes-base.readFile",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.data}}",
+              "operation": "notContains",
+              "value2": "Eşik altı fiili dolaşım oranına sahip bir hisse senedi bulunamamıştır"
+            }
+          ]
+        }
+      },
+      "name": "Sinyal Kontrolü",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "execute",
+        "script": "python3 telegram_notify.py {{$node[\"Telegram Bot Token\"].json[\"token\"]}} {{$node[\"Telegram Chat ID\"].json[\"chatId\"]}}",
+        "options": {
+          "fullResponse": false
+        }
+      },
+      "name": "Telegram Bildirimi Gönder (Python)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Günlük Tetikleyici (10:00)": [
+      [
+        {
+          "node": "KAP Verisini İndir",
+          "type": "main"
+        }
+      ]
+    ],
+    "KAP Verisini İndir": [
+      [
+        {
+          "node": "Veriyi Analiz Et (Python)",
+          "type": "main"
+        }
+      ]
+    ],
+    "Veriyi Analiz Et (Python)": [
+      [
+        {
+          "node": "Sinyal Dosyasını Oku",
+          "type": "main"
+        }
+      ]
+    ],
+    "Sinyal Dosyasını Oku": [
+      [
+        {
+          "node": "Sinyal Kontrolü",
+          "type": "main"
+        }
+      ]
+    ],
+    "Sinyal Kontrolü": [
+      [
+        {
+          "node": "Telegram Bildirimi Gönder (Python)",
+          "type": "main"
+        }
+      ]
+    ]
+  }
+}
